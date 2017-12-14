@@ -49,8 +49,9 @@ public class JdbcAccountRepository implements AccountRepository {
 			ResultSet rs = ps.executeQuery();
 			if (rs.next()) {
 				cust = new Customer(rs.getString(1), rs.getString(2), rs.getInt(3));
-			}
-			ps.executeUpdate();
+			} else {
+				throw new AccountNotFoundException("This account was not found!");
+			}			
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} finally {
