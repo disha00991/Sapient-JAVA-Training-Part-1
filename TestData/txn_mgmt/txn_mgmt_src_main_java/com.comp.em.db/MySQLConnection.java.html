@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../../jacoco-resources/report.gif" type="image/gif"/><title>MySQLConnection.java</title><link rel="stylesheet" href="../../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../../index.html" class="el_report">txn_mgmt (Dec 22, 2017 12:35:48 PM)</a> &gt; <a href="../../index.html" class="el_group">txn_mgmt</a> &gt; <a href="../index.html" class="el_bundle">txn_mgmt/src/main/java</a> &gt; <a href="index.source.html" class="el_package">com.comp.em.db</a> &gt; <span class="el_source">MySQLConnection.java</span></div><h1>MySQLConnection.java</h1><pre class="source lang-java linenums">package com.comp.em.db;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
+<span class="nc" id="L7">public class MySQLConnection {</span>
+	static {
+		try {
+<span class="fc" id="L10">			Class.forName(&quot;com.mysql.jdbc.Driver&quot;);</span>
+<span class="pc" id="L11">		} catch (ClassNotFoundException e) {</span>
+<span class="nc" id="L12">			e.printStackTrace();</span>
+		}
+<span class="fc" id="L14">	}</span>
+
+	public static Connection getExchangeConnection() throws SQLException {
+<span class="fc" id="L17">		String url = &quot;jdbc:mysql://10.207.60.33:3306/em&quot;; // </span>
+<span class="fc" id="L18">		String user = &quot;root&quot;;</span>
+<span class="fc" id="L19">		String password = &quot;7885&quot;;</span>
+<span class="fc" id="L20">		return DriverManager.getConnection(url, user, password);</span>
+	}
+	public static Connection getTradeConnection() throws SQLException {
+<span class="fc" id="L23">		String url = &quot;jdbc:mysql://10.207.60.33:3306/tm&quot;; // </span>
+<span class="fc" id="L24">		String user = &quot;root&quot;;</span>
+<span class="fc" id="L25">		String password = &quot;7885&quot;;</span>
+<span class="fc" id="L26">		return DriverManager.getConnection(url, user, password);</span>
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>txn_mgmt (Dec 22, 2017 12:35:48 PM)</div></body></html>

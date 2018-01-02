@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../../jacoco-resources/report.gif" type="image/gif"/><title>ExchangeRepositoryImpl.java</title><link rel="stylesheet" href="../../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../../index.html" class="el_report">txn_mgmt (Dec 22, 2017 12:35:48 PM)</a> &gt; <a href="../../index.html" class="el_group">txn_mgmt</a> &gt; <a href="../index.html" class="el_bundle">txn_mgmt/src/main/java</a> &gt; <a href="index.source.html" class="el_package">com.comp.em.repository</a> &gt; <span class="el_source">ExchangeRepositoryImpl.java</span></div><h1>ExchangeRepositoryImpl.java</h1><pre class="source lang-java linenums">package com.comp.em.repository;
+
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+
+import com.comp.em.db.MySQLConnection;
+
+<span class="fc" id="L13">public class ExchangeRepositoryImpl implements ExchangeRepository {</span>
+	
+	@Override
+	public void insertIntoExchange() {
+<span class="fc" id="L17">		Connection exchangeConn = null;</span>
+<span class="fc" id="L18">		Connection tradeConn = null;</span>
+		try {
+			//change final connection name
+<span class="fc" id="L21">			tradeConn = MySQLConnection.getTradeConnection();</span>
+<span class="fc" id="L22">			exchangeConn = MySQLConnection.getExchangeConnection();</span>
+
+<span class="fc" id="L24">			PreparedStatement stmt = tradeConn.prepareStatement(&quot;select * from tm.block_exec&quot;);</span>
+<span class="fc" id="L25">			ResultSet rs = stmt.executeQuery();</span>
+<span class="fc bfc" id="L26" title="All 2 branches covered.">			while (rs.next()) {</span>
+<span class="fc" id="L27">				String type = rs.getString(3);</span>
+<span class="fc" id="L28">				String side = rs.getString(4);</span>
+<span class="pc bpc" id="L29" title="1 of 2 branches missed.">				if (type.equalsIgnoreCase(&quot;limit&quot;)) {</span>
+<span class="fc" id="L30">					String sql = &quot;insert into em.order_matching values(?,?,?,?,?,?,?,?)&quot;;</span>
+<span class="fc" id="L31">					PreparedStatement ps = exchangeConn.prepareStatement(sql);</span>
+<span class="fc" id="L32">					ps.setInt(1, rs.getInt(1));</span>
+<span class="fc" id="L33">					ps.setString(2, rs.getString(2));</span>
+<span class="fc bfc" id="L34" title="All 2 branches covered.">					if (side.equalsIgnoreCase(&quot;buy&quot;)) {</span>
+<span class="fc" id="L35">						ps.setInt(3, rs.getInt(5));</span>
+<span class="fc" id="L36">						ps.setNull(4, java.sql.Types.INTEGER);</span>
+<span class="fc" id="L37">						ps.setDouble(5, rs.getDouble(6));</span>
+<span class="fc" id="L38">						ps.setNull(6, java.sql.Types.DOUBLE);</span>
+<span class="pc bpc" id="L39" title="1 of 2 branches missed.">					} else if(side.equalsIgnoreCase(&quot;sell&quot;)){</span>
+<span class="fc" id="L40">						ps.setNull(3, java.sql.Types.INTEGER);</span>
+<span class="fc" id="L41">						ps.setInt(4, rs.getInt(5));</span>
+<span class="fc" id="L42">						ps.setNull(5, java.sql.Types.DOUBLE);</span>
+<span class="fc" id="L43">						ps.setDouble(6, rs.getDouble(6));</span>
+					}
+<span class="fc" id="L45">					ps.setInt(7, 1);</span>
+<span class="fc" id="L46">					ps.setString(8, side);</span>
+<span class="fc" id="L47">					ps.executeUpdate();</span>
+				}
+			}
+<span class="pc" id="L50">		} catch (SQLException e) {</span>
+<span class="nc" id="L51">			e.printStackTrace();</span>
+<span class="nc" id="L52">		} finally {</span>
+<span class="pc bpc" id="L53" title="10 of 12 branches missed.">			if (tradeConn != null &amp;&amp; exchangeConn != null) {</span>
+				try {
+<span class="pc" id="L55">					tradeConn.close();</span>
+<span class="pc" id="L56">					exchangeConn.close();</span>
+<span class="pc" id="L57">				} catch (SQLException e) {</span>
+<span class="nc" id="L58">					e.printStackTrace();</span>
+				}
+			}
+<span class="nc" id="L61">		}</span>
+<span class="fc" id="L62">	}</span>
+
+	@Override
+	public void orderSegregation() {
+<span class="fc" id="L66">		Connection exchangeConn = null;</span>
+<span class="fc" id="L67">		PreparedStatement ps = null;</span>
+<span class="fc" id="L68">		Statement stmt = null;</span>
+		try {
+			//change final connection name
+<span class="fc" id="L71">			exchangeConn = MySQLConnection.getExchangeConnection();</span>
+<span class="fc" id="L72">			stmt = exchangeConn.createStatement();</span>
+<span class="fc" id="L73">			ResultSet rs = stmt.executeQuery(&quot;select * from em.order_matching&quot;);</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">			while (rs.next()) {</span>
+<span class="fc" id="L75">				String side = rs.getString(8);</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">				if (side.equals(&quot;buy&quot;)) {</span>
+<span class="fc" id="L77">					String sql = &quot;insert into em.buy values(?,?,?,?)&quot;;</span>
+<span class="fc" id="L78">					ps = exchangeConn.prepareStatement(sql);</span>
+<span class="fc" id="L79">					ps.setInt(1, rs.getInt(1));</span>
+<span class="fc" id="L80">					ps.setString(2, rs.getString(2));</span>
+<span class="fc" id="L81">					ps.setInt(3, rs.getInt(3));</span>
+<span class="fc" id="L82">					ps.setDouble(4, rs.getDouble(5));</span>
+<span class="fc" id="L83">				} else {</span>
+<span class="fc" id="L84">					String sql = &quot;insert into em.sell values(?,?,?,?)&quot;;</span>
+<span class="fc" id="L85">					ps = exchangeConn.prepareStatement(sql);</span>
+<span class="fc" id="L86">					ps.setInt(1, rs.getInt(1));</span>
+<span class="fc" id="L87">					ps.setString(2, rs.getString(2));</span>
+<span class="fc" id="L88">					ps.setInt(3, rs.getInt(4));</span>
+<span class="fc" id="L89">					ps.setDouble(4, rs.getDouble(6));</span>
+				}
+<span class="fc" id="L91">				ps.executeUpdate();</span>
+			}
+<span class="pc" id="L93">		} catch (Exception e) {</span>
+<span class="nc" id="L94">			e.printStackTrace();</span>
+<span class="nc" id="L95">		} finally {</span>
+<span class="pc bpc" id="L96" title="5 of 6 branches missed.">			if (exchangeConn != null) {</span>
+				try {
+<span class="pc" id="L98">					exchangeConn.close();</span>
+<span class="pc" id="L99">					stmt.close();</span>
+<span class="pc" id="L100">				} catch (SQLException e) {</span>
+<span class="nc" id="L101">					e.printStackTrace();</span>
+				}
+			}
+<span class="nc" id="L104">		}</span>
+<span class="fc" id="L105">	}</span>
+
+	@Override
+	public void cleanTxnTables() {
+<span class="fc" id="L109">		PreparedStatement ps = null;</span>
+<span class="fc" id="L110">		Connection con = null;</span>
+		String sql;
+		try {
+<span class="fc" id="L113">			con = MySQLConnection.getExchangeConnection();</span>
+			
+<span class="fc" id="L115">			sql = &quot;truncate table em.order_matching&quot;;</span>
+<span class="fc" id="L116">			ps = con.prepareStatement(sql);</span>
+<span class="fc" id="L117">			ps.executeUpdate();</span>
+			
+<span class="fc" id="L119">			sql = &quot;truncate table em.buy&quot;;</span>
+<span class="fc" id="L120">			ps = con.prepareStatement(sql);</span>
+<span class="fc" id="L121">			ps.executeUpdate();</span>
+			
+<span class="fc" id="L123">			sql = &quot;truncate table em.sell&quot;;</span>
+<span class="fc" id="L124">			ps = con.prepareStatement(sql);</span>
+<span class="fc" id="L125">			ps.executeUpdate();</span>
+			
+<span class="fc" id="L127">			sql = &quot;truncate table em.temp&quot;;</span>
+<span class="fc" id="L128">			ps = con.prepareStatement(sql);</span>
+<span class="fc" id="L129">			ps.executeUpdate();			</span>
+<span class="pc" id="L130">		} catch (SQLException e) {</span>
+<span class="nc" id="L131">			e.printStackTrace();</span>
+<span class="nc" id="L132">		} finally {</span>
+			try {
+<span class="pc bpc" id="L134" title="5 of 6 branches missed.">				if (con != null) {</span>
+<span class="pc" id="L135">					con.close();</span>
+				}
+<span class="pc" id="L137">			} catch (SQLException e) {</span>
+<span class="nc" id="L138">				e.printStackTrace();</span>
+			}
+<span class="nc" id="L140">		}</span>
+
+<span class="fc" id="L142">	}</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>txn_mgmt (Dec 22, 2017 12:35:48 PM)</div></body></html>

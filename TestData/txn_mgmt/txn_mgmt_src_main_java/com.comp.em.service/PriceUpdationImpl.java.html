@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../../jacoco-resources/report.gif" type="image/gif"/><title>PriceUpdationImpl.java</title><link rel="stylesheet" href="../../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../../index.html" class="el_report">txn_mgmt (Dec 22, 2017 12:35:48 PM)</a> &gt; <a href="../../index.html" class="el_group">txn_mgmt</a> &gt; <a href="../index.html" class="el_bundle">txn_mgmt/src/main/java</a> &gt; <a href="index.source.html" class="el_package">com.comp.em.service</a> &gt; <span class="el_source">PriceUpdationImpl.java</span></div><h1>PriceUpdationImpl.java</h1><pre class="source lang-java linenums">package com.comp.em.service;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.text.DecimalFormat;
+
+import com.comp.em.db.MySQLConnection;
+
+<span class="fc" id="L11">public class PriceUpdationImpl implements PriceUpdation {</span>
+	
+	@Override
+	public void priceUpdate(int buy_qty, int sell_qty, String symbol) {
+<span class="fc" id="L15">		Connection con = null;</span>
+
+		try {
+<span class="fc" id="L18">			con = MySQLConnection.getExchangeConnection();</span>
+
+<span class="fc" id="L20">			String sql1 = &quot;select MarketPrice from em.exchng_stocks where Symbol = ?&quot;;</span>
+<span class="fc" id="L21">			PreparedStatement ps1 = con.prepareStatement(sql1);</span>
+<span class="fc" id="L22">			ps1.setString(1, symbol);</span>
+<span class="fc" id="L23">			ResultSet rs1 = ps1.executeQuery();</span>
+			
+<span class="fc bfc" id="L25" title="All 2 branches covered.">			while(rs1.next()) {</span>
+
+<span class="fc" id="L27">			double price = rs1.getDouble(1);</span>
+<span class="fc" id="L28">			 DecimalFormat df2 = new DecimalFormat(&quot;.##&quot;);</span>
+<span class="fc" id="L29">			String sql2 = &quot;update em.exchng_stocks set MarketPrice = ?, Indicator = ? where Symbol = ?&quot;;</span>
+<span class="fc" id="L30">			PreparedStatement ps2 = con.prepareStatement(sql2);</span>
+			
+<span class="pc bpc" id="L32" title="1 of 2 branches missed.">			if (buy_qty &gt;= sell_qty) {</span>
+<span class="fc" id="L33">				price = Math.random() * 10 + price;</span>
+<span class="fc" id="L34">				double price1=Double.parseDouble(df2.format(price));</span>
+<span class="fc" id="L35">				ps2.setDouble(1, price1);</span>
+<span class="fc" id="L36">				ps2.setString(3, symbol);</span>
+<span class="fc" id="L37">				ps2.setInt(2, 1);</span>
+				
+
+<span class="fc" id="L40">			}</span>
+			else {
+<span class="nc" id="L42">				price = Math.random() * (-5) + price;</span>
+<span class="nc" id="L43">				double price1=Double.parseDouble(df2.format(price));</span>
+			
+<span class="nc" id="L45">				ps2.setDouble(1, price1);</span>
+<span class="nc" id="L46">				ps2.setString(3, symbol);</span>
+<span class="nc" id="L47">				ps2.setInt(2, -1);</span>
+			}
+<span class="fc" id="L49">			ps2.executeUpdate();</span>
+			}
+
+<span class="pc" id="L52">		} catch (SQLException e) {</span>
+<span class="nc" id="L53">			e.printStackTrace();</span>
+		}
+
+<span class="fc" id="L56">	}</span>
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>txn_mgmt (Dec 22, 2017 12:35:48 PM)</div></body></html>

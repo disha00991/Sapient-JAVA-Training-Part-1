@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../../jacoco-resources/report.gif" type="image/gif"/><title>BlockOrderMatchingImpl.java</title><link rel="stylesheet" href="../../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../../index.html" class="el_report">txn_mgmt (Dec 22, 2017 12:35:48 PM)</a> &gt; <a href="../../index.html" class="el_group">txn_mgmt</a> &gt; <a href="../index.html" class="el_bundle">txn_mgmt/src/main/java</a> &gt; <a href="index.source.html" class="el_package">com.comp.em.service</a> &gt; <span class="el_source">BlockOrderMatchingImpl.java</span></div><h1>BlockOrderMatchingImpl.java</h1><pre class="source lang-java linenums">package com.comp.em.service;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import com.comp.em.db.MySQLConnection;
+import com.comp.em.repository.ExchangeRepository;
+
+public class BlockOrderMatchingImpl implements BlockOrderMatching {
+
+	private ExchangeRepository exchangeRepository;
+	private PriceUpdation stock;
+
+<span class="fc" id="L16">	public BlockOrderMatchingImpl(ExchangeRepository exchangeRepository,PriceUpdation stock) {</span>
+
+<span class="fc" id="L18">		this.exchangeRepository = exchangeRepository;</span>
+<span class="fc" id="L19">		this.stock = stock;</span>
+<span class="fc" id="L20">	}</span>
+
+	@Override
+	public void init() {
+
+<span class="fc" id="L25">		exchangeRepository.cleanTxnTables();</span>
+<span class="fc" id="L26">		exchangeRepository.insertIntoExchange();</span>
+<span class="fc" id="L27">		exchangeRepository.orderSegregation();</span>
+		//stock = new PriceUpdationImpl();
+<span class="fc" id="L29">	}</span>
+
+	@Override
+	public void matchOrders() {
+<span class="fc" id="L33">		PreparedStatement stmt = null;</span>
+<span class="fc" id="L34">		int index = 0;</span>
+<span class="fc" id="L35">		int size = 0;</span>
+		try {
+			// clean the tables to be used to prevent re-execution of old blocks
+<span class="fc" id="L38">			Connection con = MySQLConnection.getExchangeConnection();</span>
+<span class="fc" id="L39">			stmt = con.prepareStatement(</span>
+<span class="fc" id="L40">					&quot;insert into em.temp (select * from em.buy b join em.sell s on b.symbol=s.symbol)&quot;);</span>
+<span class="fc" id="L41">			stmt.executeUpdate();</span>
+
+<span class="fc" id="L43">			stmt = con.prepareStatement(&quot;select count(*) from em.temp&quot;);</span>
+<span class="fc" id="L44">			ResultSet rs = stmt.executeQuery();</span>
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">			if (rs.next()) {</span>
+<span class="fc" id="L46">				size = rs.getInt(1);</span>
+			}
+
+<span class="fc bfc" id="L49" title="All 2 branches covered.">			while (index &lt; size) {</span>
+<span class="fc" id="L50">				stmt = con.prepareStatement(&quot;select * from em.temp limit &quot; + (index++) + &quot;, 1&quot;);</span>
+<span class="fc" id="L51">				rs = stmt.executeQuery();</span>
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">				if (rs.next()) {</span>
+
+<span class="fc" id="L54">					int bqty = rs.getInt(3);</span>
+<span class="fc" id="L55">					int sqty = rs.getInt(7);</span>
+<span class="fc" id="L56">					int orderStatus_buy = 1;</span>
+<span class="fc" id="L57">					int orderStatus_sell = 1;</span>
+<span class="fc" id="L58">					boolean updateNeeded = true;</span>
+<span class="fc" id="L59">					double bprice = rs.getDouble(4);</span>
+<span class="fc" id="L60">					double sprice = rs.getDouble(8);</span>
+
+<span class="pc bpc" id="L62" title="1 of 4 branches missed.">					if (bprice &gt;= sprice &amp;&amp; bqty == sqty) {</span>
+<span class="nc" id="L63">						bqty = 0;</span>
+<span class="nc" id="L64">						sqty = 0;</span>
+<span class="nc" id="L65">						orderStatus_buy = 3;</span>
+<span class="nc" id="L66">						orderStatus_sell = 3;</span>
+<span class="pc bpc" id="L67" title="1 of 6 branches missed.">					} else if (bprice &gt;= sprice &amp;&amp; bqty &gt; sqty &amp;&amp; sqty != 0) {</span>
+<span class="fc" id="L68">						bqty = bqty - sqty;</span>
+<span class="fc" id="L69">						sqty = 0;</span>
+<span class="fc" id="L70">						orderStatus_buy = 2;</span>
+<span class="fc" id="L71">						orderStatus_sell = 3;</span>
+<span class="pc bpc" id="L72" title="3 of 6 branches missed.">					} else if (bprice &gt;= sprice &amp;&amp; bqty &lt; sqty &amp;&amp; bqty != 0) {</span>
+<span class="nc" id="L73">						sqty = sqty - bqty;</span>
+<span class="nc" id="L74">						bqty = 0;</span>
+<span class="nc" id="L75">						orderStatus_buy = 3;</span>
+<span class="nc" id="L76">						orderStatus_sell = 2;</span>
+<span class="nc" id="L77">					} else {</span>
+<span class="fc" id="L78">						System.out.println(&quot;For Block ID: &quot; + rs.getInt(1) + &quot;, &quot; + rs.getInt(5) + &quot; Order Not Executed&quot;);</span>
+<span class="fc" id="L79">						updateNeeded = false;</span>
+					}
+
+					// updating executed status in order_matching table
+<span class="fc" id="L83">					stmt = con.prepareStatement(&quot;update order_matching set buy_qty=? where block_id=?&quot;);</span>
+<span class="fc" id="L84">					stmt.setInt(1, bqty);</span>
+<span class="fc" id="L85">					stmt.setInt(2, rs.getInt(1));</span>
+<span class="fc" id="L86">					stmt.executeUpdate();</span>
+
+<span class="fc" id="L88">					stmt = con.prepareStatement(&quot;update order_matching set sell_qty=? where block_id=?&quot;);</span>
+<span class="fc" id="L89">					stmt.setInt(1, sqty);</span>
+<span class="fc" id="L90">					stmt.setInt(2, rs.getInt(5));</span>
+<span class="fc" id="L91">					stmt.executeUpdate();</span>
+
+					// change market price of stock caused by trade execution
+<span class="fc bfc" id="L94" title="All 2 branches covered.">					if (updateNeeded) {</span>
+<span class="fc" id="L95">						String symbol = rs.getString(2);</span>
+<span class="fc" id="L96">						stock.priceUpdate(bqty, sqty, symbol);</span>
+						
+<span class="fc" id="L98">						stmt = con.prepareStatement(&quot;update order_matching set order_status=? where block_id=?&quot;);</span>
+<span class="fc" id="L99">						stmt.setInt(1, orderStatus_buy);</span>
+<span class="fc" id="L100">						stmt.setInt(2, rs.getInt(1));</span>
+<span class="fc" id="L101">						stmt.executeUpdate();</span>
+
+<span class="fc" id="L103">						stmt = con</span>
+<span class="fc" id="L104">								.prepareStatement(&quot;update order_matching set order_status=? where block_id=?&quot;);</span>
+<span class="fc" id="L105">						stmt.setInt(1, orderStatus_sell);</span>
+<span class="fc" id="L106">						stmt.setInt(2, rs.getInt(5));</span>
+<span class="fc" id="L107">						stmt.executeUpdate();</span>
+					}
+
+					// updating quantity left to be executed in temp table after executing 1 order
+<span class="fc" id="L111">					stmt = con.prepareStatement(&quot;update temp set sell_qty=? where block_id_sell=?&quot;);</span>
+<span class="fc" id="L112">					stmt.setInt(1, sqty);</span>
+<span class="fc" id="L113">					stmt.setInt(2, rs.getInt(5));</span>
+<span class="fc" id="L114">					stmt.executeUpdate();</span>
+<span class="fc" id="L115">					stmt = con.prepareStatement(&quot;update temp set buy_qty=? where block_id_buy=?&quot;);</span>
+<span class="fc" id="L116">					stmt.setInt(1, bqty);</span>
+<span class="fc" id="L117">					stmt.setInt(2, rs.getInt(1));</span>
+<span class="fc" id="L118">					stmt.executeUpdate();</span>
+
+				}
+			}
+<span class="pc" id="L122">		} catch (SQLException e) {</span>
+<span class="nc" id="L123">			e.printStackTrace();</span>
+		}
+<span class="fc" id="L125">	}</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>txn_mgmt (Dec 22, 2017 12:35:48 PM)</div></body></html>
