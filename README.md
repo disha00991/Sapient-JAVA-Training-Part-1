@@ -1,6 +1,6 @@
-## Sapient-JAVA-Training-Part-1
+# Sapient-JAVA-Training-Part-1
 
-# Concerns Fundamental Concept building in JAVA
+## Concerns Fundamental Concept building in JAVA
 Covers advanced concepts like:
 
 -Multithreading,
